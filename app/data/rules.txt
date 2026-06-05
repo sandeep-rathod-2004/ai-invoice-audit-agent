@@ -1,0 +1,3 @@
+Tax rate must be 18
+GST must be present
+Invoice must contain invoice number
