@@ -1,22 +1,37 @@
+import os
 import re
 import time
+from pathlib import Path
+from datetime import datetime
 
-from langchain_ollama import ChatOllama
+from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from tools.extract_tool import extract_invoice_text
 from tools.clean_tool import clean_text
-
+from tools.retrieve_tool import retrieve_rules
 
 # ============================================
-# LIGHTWEIGHT LOCAL LLM
+# LOAD ENVIRONMENT VARIABLES
 # ============================================
 
-llm = ChatOllama(
-    model="phi3",
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+if not GOOGLE_API_KEY:
+    raise Exception("GOOGLE_API_KEY not found in .env")
+
+# ============================================
+# GEMINI LLM
+# ============================================
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    google_api_key=GOOGLE_API_KEY,
     temperature=0,
-    num_predict=50
 )
-
 
 # ============================================
 # MAIN AGENT
@@ -25,6 +40,8 @@ llm = ChatOllama(
 def run_invoice_agent(file_path, task):
 
     start_time = time.time()
+
+    current_date = datetime.now().strftime("%d-%m-%Y")
 
     print("\n========================================")
     print("AGENTIC INVOICE AI SYSTEM STARTED")
@@ -37,9 +54,13 @@ def run_invoice_agent(file_path, task):
     print("🔹 Agent 1: Planning workflow...")
 
     planner_prompt = f"""
-    Generate short workflow steps for invoice validation.
-    Task: {task}
-    """
+Generate a short workflow for this task.
+
+Task:
+{task}
+
+Return only 5-6 short workflow steps.
+"""
 
     plan = llm.invoke(planner_prompt).content
 
@@ -66,196 +87,85 @@ def run_invoice_agent(file_path, task):
     print("✅ Text cleaning completed\n")
 
     # ============================================
-    # AGENT 4 — PARSE INVOICE
+    # AGENT 4 — RETRIEVE RULES (RAG)
     # ============================================
 
-    print("🔹 Agent 4: Parsing invoice details...")
+    print("🔹 Agent 4: Retrieving compliance rules...")
 
-    pattern = r"""
-    Vendor:\s*(.*?)\s*
-    Invoice\s*Number:\s*(.*?)\s*
-    Tax\s*Rate:\s*(.*?)\s*
-    GST:\s*(.*?)
-    (?=Vendor:|$)
-    """
+    rules = retrieve_rules.invoke("invoice validation rules")
 
-    matches = re.findall(
-        pattern,
-        text,
-        re.IGNORECASE | re.DOTALL | re.VERBOSE
-    )
-
-    print(f"✅ Parsed {len(matches)} invoice(s)\n")
+    print("✅ Rules retrieved\n")
 
     # ============================================
-    # AGENT 5 — VALIDATION
+    # AGENT 5 — GEMINI VALIDATION
     # ============================================
 
-    print("🔹 Agent 5: Validating invoices...\n")
+    print("🔹 Agent 5: Validating invoices with Gemini...\n")
 
-    result = """
-========================================
-MULTI INVOICE VALIDATION REPORT
-========================================
+    validation_prompt = f"""
+You are an expert Invoice Compliance Auditor.
+
+Use ONLY the following compliance rules.
+
+==============================
+RULES
+==============================
+
+{rules}
+
+==============================
+TASK
+==============================
+
+{task}
+
+==============================
+INVOICE TEXT
+==============================
+
+{cleaned_text}
+
+==============================
+OUTPUT FORMAT
+==============================
+
+Generate a professional audit report.
+
+Today's Date is: {current_date}
+
+The report MUST start exactly like this:
+
+Invoice Compliance Audit Report
+
+Date: {current_date}
+
+Never write "[Current Date]".
+Never generate another date.
+Always use the provided date exactly.
+
+Then continue with the invoice audit.
+
+For every invoice include:
+
+Invoice Number
+Vendor
+GST Number
+Tax Rate
+Validation Status (VALID / INVALID)
+Violations
+Recommendation
+
+At the end include:
+
+Total Invoices
+Valid Invoices
+Invalid Invoices
+
+Do not invent rules.
+Only use the retrieved rules.
 """
 
-    invoice_count = 0
-    total_valid = 0
-    total_invalid = 0
-
-    for match in matches:
-
-        invoice_count += 1
-
-        vendor = match[0].strip()
-        invoice_number = match[1].strip()
-        tax_rate = match[2].strip()
-        gst_number = match[3].strip()
-
-        validation_checks = []
-        violations = []
-
-        is_valid = True
-
-        # ============================================
-        # RULE 1 — INVOICE NUMBER
-        # ============================================
-
-        if invoice_number:
-
-            validation_checks.append(
-                f"✔ Invoice Number Present : {invoice_number}"
-            )
-
-        else:
-
-            validation_checks.append(
-                "✘ Invoice Number Missing"
-            )
-
-            violations.append(
-                "Invoice number missing"
-            )
-
-            is_valid = False
-
-        # ============================================
-        # RULE 2 — GST VALIDATION
-        # ============================================
-
-        if gst_number and gst_number.lower() != "missing":
-
-            validation_checks.append(
-                f"✔ GST Number Present : {gst_number}"
-            )
-
-        else:
-
-            validation_checks.append(
-                "✘ GST Number Missing"
-            )
-
-            violations.append(
-                "GST number missing"
-            )
-
-            is_valid = False
-
-        # ============================================
-        # RULE 3 — TAX RATE
-        # ============================================
-
-        if "18" in tax_rate:
-
-            validation_checks.append(
-                "✔ Tax Rate is 18%"
-            )
-
-        else:
-
-            validation_checks.append(
-                f"✘ Invalid Tax Rate : {tax_rate}"
-            )
-
-            violations.append(
-                "Tax rate must be 18%"
-            )
-
-            is_valid = False
-
-        # ============================================
-        # STATUS
-        # ============================================
-
-        status = "VALID" if is_valid else "INVALID"
-
-        if is_valid:
-            total_valid += 1
-        else:
-            total_invalid += 1
-
-        # ============================================
-        # REPORT
-        # ============================================
-
-        result += f"""
-
-----------------------------------------
-INVOICE {invoice_count}
-----------------------------------------
-
-Validation Status : {status}
-
-Vendor Name     : {vendor}
-Invoice Number  : {invoice_number}
-GST Number      : {gst_number}
-Tax Rate        : {tax_rate}
-
-----------------------------------------
-VALIDATION CHECKS
-----------------------------------------
-"""
-
-        for item in validation_checks:
-            result += f"\n{item}"
-
-        if violations:
-
-            result += """
-
-----------------------------------------
-VIOLATIONS
-----------------------------------------
-"""
-
-            for item in violations:
-                result += f"\n• {item}"
-
-        else:
-
-            result += """
-
-----------------------------------------
-STATUS
-----------------------------------------
-
-Invoice passed all compliance checks.
-"""
-
-    # ============================================
-    # NO INVOICE FOUND
-    # ============================================
-
-    if invoice_count == 0:
-
-        result += """
-
-No valid invoice structure detected.
-"""
-
-    # ============================================
-    # FINAL SUMMARY
-    # ============================================
+    result = llm.invoke(validation_prompt).content
 
     execution_time = round(time.time() - start_time, 2)
 
@@ -263,42 +173,57 @@ No valid invoice structure detected.
     print("🔹 Agent 6: Generating final report...")
     print("✅ Report generation completed\n")
 
-    result += f"""
-
-========================================
-FINAL SUMMARY
-========================================
-
-Total Invoices Processed : {invoice_count}
-Valid Invoices           : {total_valid}
-Invalid Invoices         : {total_invalid}
-
-========================================
-EXECUTION DETAILS
-========================================
-
-Execution Time           : {execution_time} seconds
-
-========================================
-AI AGENT WORKFLOW
-========================================
-
-1. Planning Agent
-2. Extraction Agent
-3. Cleaning Agent
-4. Parsing Agent
-5. Validation Agent
-6. Reporting Agent
-
-========================================
-"""
-
     print("========================================")
     print("AI SYSTEM COMPLETED SUCCESSFULLY")
     print("========================================\n")
 
+    # ============================================
+    # ANALYTICS
+    # ============================================
+
+    total = 0
+    valid = 0
+    invalid = 0
+
+    try:
+
+        total_match = re.search(
+            r"\*\*Total Invoices:\*\*\s*(\d+)",
+            result,
+            re.IGNORECASE,
+            )
+
+        valid_match = re.search(
+            r"\*\*Valid Invoices:\*\*\s*(\d+)",
+            result,
+            re.IGNORECASE,
+            )
+
+        invalid_match = re.search(
+            r"\*\*Invalid Invoices:\*\*\s*(\d+)",
+            result,
+            re.IGNORECASE,
+            )
+
+        if total_match:
+            total = int(total_match.group(1))
+
+        if valid_match:
+            valid = int(valid_match.group(1))
+
+        if invalid_match:
+            invalid = int(invalid_match.group(1))
+
+    except Exception:
+        pass
+
     return {
         "task": task,
         "agent_plan": str(plan),
-        "result": result
+        "retrieved_rules": rules,
+        "result": result,
+        "execution_time": execution_time,
+        "total": total,
+        "valid": valid,
+        "invalid": invalid,
     }
