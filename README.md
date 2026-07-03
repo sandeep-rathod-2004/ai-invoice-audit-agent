@@ -1,115 +1,300 @@
-# AI Invoice Audit Agent
+# 🤖 AI Invoice Audit Agent
 
-## Overview
+## 📌 Overview
 
-AI Invoice Audit Agent is a Generative AI-powered document intelligence system that automates invoice extraction, validation, and auditing. The application leverages Retrieval-Augmented Generation (RAG) techniques to analyze invoice documents, identify inconsistencies, and provide intelligent insights while reducing manual effort.
+AI Invoice Audit Agent is a **Multi-Agent RAG-powered Document Intelligence System** that automates invoice extraction, compliance validation, and auditing using **LangChain**, **Google Gemini**, **FAISS**, and **FastAPI**.
 
-## Features
+The application extracts invoice information from PDF documents, retrieves relevant compliance rules using **Retrieval-Augmented Generation (RAG)**, validates invoices against business rules, and generates a professional AI-powered audit report with invoice analytics.
 
-* Automated invoice data extraction
-* Invoice validation and auditing
-* AI-powered document understanding
-* Semantic document retrieval using vector databases
-* FastAPI-based backend APIs
-* Scalable document processing workflow
-* Rule-based invoice compliance checking
+---
 
-## Technology Stack
+# ✨ Features
 
-### Backend
+- 📄 PDF Invoice Extraction
+- 🤖 AI-Powered Invoice Validation
+- 🔍 Retrieval-Augmented Generation (RAG)
+- 📚 FAISS Vector Database for Semantic Search
+- 🧠 Google Gemini Powered Audit Report Generation
+- ⚙️ Multi-Agent Workflow
+- ✅ Rule-Based Invoice Compliance Validation
+- 📊 Invoice Analytics Dashboard
+- 📥 Download Audit Report
+- ⚡ FastAPI REST APIs
+- 🎨 Modern React User Interface
 
-* Python
-* FastAPI
-* REST APIs
+---
 
-### Generative AI
+# 🏗️ Project Architecture
 
-* LangChain
-* RAG (Retrieval-Augmented Generation)
-* Prompt Engineering
-
-### Database & Storage
-
-* MongoDB
-* FAISS Vector Database
-
-### Tools & Technologies
-
-* Git
-* GitHub
-
-## Project Architecture
-
-1. Upload invoice documents.
-2. Extract invoice information from PDF files.
-3. Generate embeddings and store them in a vector database.
-4. Retrieve relevant document context using RAG.
-5. Validate invoice details against business rules.
-6. Generate audit results and explanations.
-7. Return responses through FastAPI APIs.
-
-## Folder Structure
-
-```text
-app/
-├── data/
-│   └── rules.txt
-├── invoices/
-├── tools/
-│   ├── clean_tool.py
-│   ├── explain_tool.py
-│   ├── extract_tool.py
-│   ├── parser_tool.py
-│   ├── retrieve_tool.py
-│   └── validate_tool.py
-├── vectordb/
-├── agent.py
-└── main.py
-
-frontend/
-├── src/
-├── public/
-└── package.json
+```
+                  +----------------------+
+                  |   Upload Invoice PDF |
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  | Extract Invoice Text |
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  |     Clean Text       |
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  | Retrieve Rules (RAG) |
+                  |     FAISS Search     |
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  | Google Gemini LLM    |
+                  | Invoice Validation   |
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  | Generate Audit Report|
+                  +----------+-----------+
+                             |
+                             ▼
+                  +----------------------+
+                  | Analytics Dashboard  |
+                  +----------------------+
 ```
 
-## Installation
+---
+
+# 🚀 Technology Stack
+
+## Backend
+
+- Python
+- FastAPI
+- REST APIs
+
+## Frontend
+
+- React
+- Vite
+- Tailwind CSS
+
+## Generative AI
+
+- Google Gemini
+- LangChain
+- Retrieval-Augmented Generation (RAG)
+- Prompt Engineering
+- Multi-Agent Architecture
+
+## Vector Database
+
+- FAISS
+- Sentence Transformers
+
+## PDF Processing
+
+- PDFPlumber
+
+## Tools
+
+- Git
+- GitHub
+
+---
+
+# 🤖 Multi-Agent Workflow
+
+### Agent 1
+
+Generate workflow plan.
+
+### Agent 2
+
+Extract invoice text from uploaded PDF.
+
+### Agent 3
+
+Clean and normalize extracted text.
+
+### Agent 4
+
+Retrieve invoice compliance rules from the FAISS vector database using RAG.
+
+### Agent 5
+
+Validate invoices using Google Gemini based on retrieved rules.
+
+### Agent 6
+
+Generate professional audit report and analytics.
+
+---
+
+# 📂 Folder Structure
+
+```text
+AI-INVOICE-AUDIT-AGENT
+│
+├── app
+│   │
+│   ├── data
+│   │   └── rules.txt
+│   │
+│   ├── faiss_db
+│   │   ├── index.faiss
+│   │   └── index.pkl
+│   │
+│   ├── invoices
+│   │
+│   ├── tools
+│   │   ├── clean_tool.py
+│   │   ├── extract_tool.py
+│   │   ├── retrieve_tool.py
+│   │
+│   ├── load_rules.py
+│   ├── agent.py
+│   └── main.py
+│
+├── frontend
+│   │
+│   ├── public
+│   ├── src
+│   └── package.json
+│
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+---
+
+# ⚙️ Installation
+
+## Clone Repository
 
 ```bash
 git clone https://github.com/sandeep-rathod-2004/ai-invoice-audit-agent.git
+
 cd ai-invoice-audit-agent
+```
+
+---
+
+## Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-## Run Backend
+---
+
+# ▶️ Run Backend
 
 ```bash
-python app/main.py
+cd app
+
+uvicorn main:app --reload
 ```
 
-or
+Backend runs on
 
-```bash
-uvicorn app.main:app --reload
+```
+http://127.0.0.1:8000
 ```
 
-## Run Frontend
+---
+
+# ▶️ Run Frontend
 
 ```bash
 cd frontend
+
 npm install
+
 npm run dev
 ```
 
-## Future Enhancements
+Frontend runs on
 
-* OCR integration for scanned invoices
-* Multi-document invoice processing
-* Fraud detection and anomaly analysis
-* Dashboard for invoice analytics
-* Multi-agent workflow orchestration
+```
+http://localhost:5173
+```
 
-## Author
+---
 
-**Sandeep Rathod**
-B.Tech Computer Science Engineering (2026)
-GitHub: https://github.com/sandeep-rathod-2004
+# 📋 Workflow
+
+1. Upload Invoice PDF
+2. Extract Invoice Text
+3. Clean Extracted Data
+4. Retrieve Compliance Rules using FAISS
+5. Validate Invoice with Google Gemini
+6. Generate AI Audit Report
+7. Display Invoice Analytics
+8. Download Audit Report
+
+---
+
+# 📊 Sample Output
+
+- Invoice Number
+- Vendor Name
+- GST Number
+- Tax Rate
+- Validation Status
+- Rule Violations
+- Recommendations
+- Invoice Summary
+- Total Invoices
+- Valid Invoices
+- Invalid Invoices
+- Execution Time
+
+---
+
+# 🔮 Future Enhancements
+
+- OCR Support for Scanned Invoices
+- GST API Verification
+- Invoice Fraud Detection
+- Multi-Document Processing
+- User Authentication
+- Invoice History
+- Cloud Storage Integration
+- Real-Time Dashboard
+- Email Audit Reports
+- Multi-Language Invoice Support
+
+---
+
+# 📷 Screenshots
+
+### Dashboard
+
+Upload invoices and perform AI-powered compliance validation.
+
+### AI Audit Report
+
+Generate professional invoice audit reports with rule violations and recommendations.
+
+### Analytics
+
+Display total invoices, valid invoices, invalid invoices, and execution time.
+
+---
+
+# 👨‍💻 Author
+
+## Sandeep Rathod
+
+**B.Tech Computer Science & Engineering (2026)**
+
+### GitHub
+
+https://github.com/sandeep-rathod-2004
+
+---
+
+# ⭐ If you found this project useful, don't forget to star the repository!
